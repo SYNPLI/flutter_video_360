@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:video_360/src/video360_android_view.dart';
 import 'package:video_360/src/video360_controller.dart';
@@ -39,6 +41,8 @@ class _Video360ViewState extends State<Video360View>
     with WidgetsBindingObserver {
   late Video360Controller controller;
 
+  bool isPlaying = false;
+
   @override
   void initState() {
     WidgetsBinding.instance?.addObserver(this);
@@ -52,6 +56,12 @@ class _Video360ViewState extends State<Video360View>
         child: Video360AndroidView(
           viewType: 'kino_video_360',
           onPlatformViewCreated: _onPlatformViewCreated,
+          gestureRecognizers: [
+            if (isPlaying)
+              Factory(
+                () => EagerGestureRecognizer(),
+              ),
+          ].toSet(),
         ),
       );
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -84,7 +94,6 @@ class _Video360ViewState extends State<Video360View>
       return;
     }
 
-    var pixelRatio = window.devicePixelRatio;
     RenderBox? box = context.findRenderObject() as RenderBox?;
 
     var width = box?.size.width ?? 0.0;
@@ -98,7 +107,14 @@ class _Video360ViewState extends State<Video360View>
       isAutoPlay: widget.isAutoPlay,
       isRepeat: widget.isRepeat,
       onCallback: widget.onCallback,
-      onPlayInfo: widget.onPlayInfo,
+      onPlayInfo: (info) {
+        if (info.isPlaying != isPlaying && Platform.isAndroid) {
+          setState(() {
+            isPlaying = info.isPlaying;
+          });
+        }
+        widget.onPlayInfo?.call(info);
+      },
     );
     controller.updateTime();
     widget.onVideo360ViewCreated(controller);
