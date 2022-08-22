@@ -159,6 +159,18 @@ class Video360Controller {
     }
   }
 
+  /// Only available on iOS.
+  Future<void> resize(double width, double height) async {
+    if (Platform.isIOS) {
+      try {
+        await _channel
+            .invokeMethod<void>('resize', {'width': width, 'height': height});
+      } on PlatformException catch (e) {
+        print('${e.code}: ${e.message}');
+      }
+    }
+  }
+
   // flutter -> android / ios callback handle
   Future<dynamic> _handleMethodCalls(MethodCall call) async {
     switch (call.method) {
@@ -167,8 +179,15 @@ class Video360Controller {
         var duration = call.arguments['duration'];
         var total = call.arguments['total'];
         var isPlaing = call.arguments['isPlaying'];
+        final compassAngle = call.arguments['compassAngle'];
+
         onPlayInfo?.call(Video360PlayInfo(
-            duration: duration, total: total, isPlaying: isPlaing));
+          duration: duration,
+          total: total,
+          isPlaying: isPlaing,
+          compassAngle: compassAngle,
+        ));
+
         break;
       default:
         print('Unknowm method ${call.method} ');

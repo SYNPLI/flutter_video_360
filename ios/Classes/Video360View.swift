@@ -102,6 +102,17 @@ extension Video360View {
                 }
                 let point = CGPoint(x: x, y: y)
                 self.swifty360View.cameraController.handlePan(isStart: isStart, point: point)
+                
+            case "resize":
+                guard let argMaps = call.arguments as? Dictionary<String, Any>,
+                      let width = argMaps["width"] as? Double,
+                      let height = argMaps["height"] as? Double else {
+                    result(FlutterError(code: call.method, message: "Missing argument", details: nil))
+                    return
+                }
+                
+                let size = CGSize(width: width, height: height)
+                self.swifty360View.frame.size = size
 
             default:
                 result(FlutterMethodNotImplemented)
@@ -171,8 +182,9 @@ extension Video360View {
             let totalDuration = self.player.currentItem?.duration ?? .zero
             let total = Int(totalDuration.value)
             let isPlaying = self.player?.isPlaying
+            let compassAngle = self.swifty360View.compassAngle
 
-            self.channel.invokeMethod("updateTime", arguments: ["duration": duration, "total": total, "isPlaying": isPlaying])
+            self.channel.invokeMethod("updateTime", arguments: ["duration": duration, "total": total, "isPlaying": isPlaying, "compassAngle": compassAngle])
         }
     }
 
