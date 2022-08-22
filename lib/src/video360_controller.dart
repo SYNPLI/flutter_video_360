@@ -161,7 +161,7 @@ class Video360Controller {
 
   /// Only available on iOS.
   Future<void> resize(double width, double height) async {
-    if (Platform.isAndroid) {
+    if (Platform.isIOS) {
       try {
         await _channel
             .invokeMethod<void>('resize', {'width': width, 'height': height});
