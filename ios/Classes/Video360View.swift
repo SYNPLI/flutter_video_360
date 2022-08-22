@@ -106,7 +106,7 @@ extension Video360View {
             case "resize":
                 guard let argMaps = call.arguments as? Dictionary<String, Any>,
                       let width = argMaps["width"] as? Double,
-                      let height = argMaps["height"] as? Double, else {
+                      let height = argMaps["height"] as? Double else {
                     result(FlutterError(code: call.method, message: "Missing argument", details: nil))
                     return
                 }
