@@ -171,6 +171,17 @@ class Video360Controller {
     }
   }
 
+  /// Only available on iOS.
+  Future<void> centerCamera() async {
+    if (Platform.isIOS) {
+      try {
+        await _channel.invokeMethod<void>('centerCamera');
+      } on PlatformException catch (e) {
+        print('${e.code}: ${e.message}');
+      }
+    }
+  }
+
   // flutter -> android / ios callback handle
   Future<dynamic> _handleMethodCalls(MethodCall call) async {
     switch (call.method) {

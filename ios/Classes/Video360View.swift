@@ -113,6 +113,12 @@ extension Video360View {
                 
                 let size = CGSize(width: width, height: height)
                 self.swifty360View.frame.size = size
+                
+            case "centerCamera":
+                self.swifty360View.cameraController.currentPosition = CGPoint(x: 3.14, y: 0.0)
+                var eulerAngles = self.swifty360View.cameraController.pointOfView.eulerAngles
+                eulerAngles.y = 3.14
+                self.swifty360View.cameraController.pointOfView.eulerAngles = eulerAngles
 
             default:
                 result(FlutterMethodNotImplemented)

@@ -21,6 +21,8 @@ class Video360View extends StatefulWidget {
   final Video360ControllerCallback? onCallback;
   final Video360ControllerPlayInfo? onPlayInfo;
   final VoidCallback? onPanCancel;
+  final VoidCallback? onPanStart;
+  final VoidCallback? onPanEnd;
 
   const Video360View({
     Key? key,
@@ -31,6 +33,8 @@ class Video360View extends StatefulWidget {
     this.onCallback,
     this.onPlayInfo,
     this.onPanCancel,
+    this.onPanStart,
+    this.onPanEnd,
   }) : super(key: key);
 
   @override
@@ -73,6 +77,8 @@ class _Video360ViewState extends State<Video360View>
           ),
           onPanCancel: widget.onPanCancel,
           onPanStart: (details) {
+            widget.onPanStart?.call();
+
             controller.onPanUpdate(
                 true, details.localPosition.dx, details.localPosition.dy);
           },
@@ -80,6 +86,7 @@ class _Video360ViewState extends State<Video360View>
             controller.onPanUpdate(
                 false, details.localPosition.dx, details.localPosition.dy);
           },
+          onPanEnd: (_) => widget.onPanEnd?.call(),
         ),
       );
     }
