@@ -12,6 +12,7 @@ class Video360Controller {
   Video360Controller({
     required int id,
     this.url,
+    this.headers,
     this.width,
     this.height,
     this.isAutoPlay,
@@ -27,6 +28,7 @@ class Video360Controller {
   late MethodChannel _channel;
 
   final String? url;
+  final Map<String, String>? headers;
   final double? width;
   final double? height;
   final bool? isAutoPlay;
@@ -41,6 +43,7 @@ class Video360Controller {
       await _channel.invokeMethod<void>('init', {
         'url': url,
         'width': width,
+        'headers': headers,
         'isAutoPlay': isAutoPlay,
         'isRepeat': isRepeat,
         'height': height,

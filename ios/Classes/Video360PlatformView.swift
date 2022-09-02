@@ -12,7 +12,7 @@ class Video360PlatformView: NSObject, FlutterPlatformView {
         flutterRegistrar registrar: FlutterPluginRegistrar
     ) {
         self._view = UIView(frame: frame)
-        self._view.backgroundColor = .yellow
+        self._view.backgroundColor = .black
         
         super.init()
         
