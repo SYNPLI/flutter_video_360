@@ -40,6 +40,7 @@ extension Video360View {
                 guard let argMaps = call.arguments as? Dictionary<String, Any>,
                       let url = argMaps["url"] as? String,
                       let videoURL = URL(string: url),
+                      let headers = argMaps["headers"] as? Dictionary<String, String>,
                       let isAutoPlay = argMaps["isAutoPlay"] as? Bool,
                       let isRepeat = argMaps["isRepeat"] as? Bool,
                       let width = argMaps["width"] as? Double,
@@ -48,7 +49,7 @@ extension Video360View {
                     return
                 }
 
-                self.initView(videoURL: videoURL, width: width, height: height)
+                self.initView(videoURL: videoURL, headers: headers, width: width, height: height)
                 self.updateTime()
 
                 if isAutoPlay {
@@ -111,9 +112,6 @@ extension Video360View {
                     return
                 }
                 
-                let size = CGSize(width: width, height: height)
-                self.swifty360View.frame.size = size
-                
             case "centerCamera":
                 self.swifty360View.cameraController.currentPosition = CGPoint(x: 3.14, y: 0.0)
                 var eulerAngles = self.swifty360View.cameraController.pointOfView.eulerAngles
@@ -127,8 +125,10 @@ extension Video360View {
     }
 
     // 360View Init
-    private func initView(videoURL: URL, width: Double, height: Double) {
-        self.player = AVPlayer(url: videoURL)
+    private func initView(videoURL: URL, headers: [String: String], width: Double, height: Double) {
+        let asset = AVURLAsset(url: videoURL, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+        let playerItem = AVPlayerItem(asset: asset)
+        self.player = AVPlayer(playerItem: playerItem)
         let motionManager = Swifty360MotionManager.shared
         self.swifty360View = Swifty360View(withFrame: CGRect(x: 0.0, y: 0.0, width: width, height: height),
                                            player: self.player,
@@ -180,7 +180,7 @@ extension Video360View {
 
     // updateTime
     private func updateTime() {
-        let interval = CMTime(seconds: 0.01, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        let interval = CMTime(seconds: 0.1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         self.player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
 

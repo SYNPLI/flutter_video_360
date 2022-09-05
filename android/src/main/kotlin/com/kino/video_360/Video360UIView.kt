@@ -7,9 +7,9 @@ import android.util.AttributeSet
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
@@ -33,6 +33,7 @@ class Video360UIView : FrameLayout, Player.Listener {
     private lateinit var vrPlayer: StyledPlayerView
     private var player: ExoPlayer? = null
     private var videoUrl = ""
+    private var _headers = mapOf<String, String>()
     private var isAutoPlay = true
     private var isRepeat = false
 
@@ -72,11 +73,12 @@ class Video360UIView : FrameLayout, Player.Listener {
                 .build()
     }
 
-    private fun buildDataSourceFactory(context: Context, cookieValue: String): DataSource.Factory {
+    private fun buildDataSourceFactory(context: Context, cookieValue: String, headers: Map<String, String>): DataSource.Factory {
         val defaultHttpFactory = DefaultHttpDataSource.Factory()
                 defaultHttpFactory.setUserAgent(Util.getUserAgent(context, "kino_video_360"))
                 defaultHttpFactory.setTransferListener(bandwidthMeter)
-                defaultHttpFactory.setDefaultRequestProperties(mapOf("Cookie" to cookieValue))
+                defaultHttpFactory.setDefaultRequestProperties(mapOf("Cookie" to cookieValue) + headers)
+
 
         return DefaultDataSource.Factory(context, defaultHttpFactory)
     }
@@ -107,20 +109,24 @@ class Video360UIView : FrameLayout, Player.Listener {
         }
     }
 
-    fun setupData(url: String, autoPlay: Boolean, repeat: Boolean) {
+    fun setupData(url: String, autoPlay: Boolean, repeat: Boolean, headers: Map<String, String>) {
         videoUrl = url
+        _headers = headers
         isAutoPlay = autoPlay
         isRepeat = repeat
     }
 
-    fun initializePlayer(url: String, autoPlay: Boolean, repeat: Boolean) {
+    fun initializePlayer(url: String, autoPlay: Boolean, repeat: Boolean, headers: Map<String, String>?) {
         player = ExoPlayer.Builder(context).build()
 
         videoUrl = url
+        if(headers != null) {
+            _headers = headers
+        }
         isAutoPlay = autoPlay
         isRepeat = repeat
 
-        val mediaSource = buildMediaSource(videoUrl, buildDataSourceFactory(context, ""))
+        val mediaSource = buildMediaSource(videoUrl, buildDataSourceFactory(context, "", _headers))
         mediaSource?.let {
             player?.setMediaSource(it)
             player?.prepare()
@@ -160,13 +166,13 @@ class Video360UIView : FrameLayout, Player.Listener {
 
     fun onStart() {
         if (Build.VERSION.SDK_INT > 23) {
-            initializePlayer(videoUrl, isAutoPlay, isRepeat)
+            initializePlayer(videoUrl, isAutoPlay, isRepeat, _headers)
         }
     }
 
     fun onResume() {
         if ((Build.VERSION.SDK_INT <= 23 || player == null)) {
-            initializePlayer(videoUrl, isAutoPlay, isRepeat)
+            initializePlayer(videoUrl, isAutoPlay, isRepeat, _headers)
         }
     }
 
@@ -201,7 +207,7 @@ class Video360UIView : FrameLayout, Player.Listener {
 
     fun reset() {
         releasePlayer()
-        initializePlayer(videoUrl, isAutoPlay, isRepeat)
+        initializePlayer(videoUrl, isAutoPlay, isRepeat, _headers)
     }
 
     fun seekTo(millisecond: Double) {

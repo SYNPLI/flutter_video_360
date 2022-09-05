@@ -16,6 +16,7 @@ class Video360View extends StatefulWidget {
   final Video360ViewCreatedCallback onVideo360ViewCreated;
 
   final String? url;
+  final Map<String, String>? headers;
   final bool? isAutoPlay;
   final bool? isRepeat;
   final Video360ControllerCallback? onCallback;
@@ -28,6 +29,7 @@ class Video360View extends StatefulWidget {
     Key? key,
     required this.onVideo360ViewCreated,
     this.url,
+    this.headers,
     this.isAutoPlay = true,
     this.isRepeat = true,
     this.onCallback,
@@ -109,6 +111,7 @@ class _Video360ViewState extends State<Video360View>
     controller = Video360Controller(
       id: id,
       url: widget.url,
+      headers: widget.headers,
       width: width,
       height: heigt,
       isAutoPlay: widget.isAutoPlay,
