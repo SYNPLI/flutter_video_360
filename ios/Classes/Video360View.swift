@@ -111,6 +111,8 @@ extension Video360View {
                     result(FlutterError(code: call.method, message: "Missing argument", details: nil))
                     return
                 }
+                let size = CGSize(width: width, height: height)
+                self.swifty360View.frame.size = size
                 
             case "centerCamera":
                 self.swifty360View.cameraController.currentPosition = CGPoint(x: 3.14, y: 0.0)
