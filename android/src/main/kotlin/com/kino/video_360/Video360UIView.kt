@@ -66,6 +66,8 @@ class Video360UIView : FrameLayout, Player.Listener {
 
         (vrPlayer.videoSurfaceView as SphericalGLSurfaceView)
                 .setDefaultStereoMode(C.STEREO_MODE_STEREO_MESH)
+        (vrPlayer.videoSurfaceView as SphericalGLSurfaceView)
+                .setUseSensorRotation(false)
         vrPlayer.useController = false
 //        vrPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
 
