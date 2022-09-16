@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -47,8 +46,6 @@ class _Video360ViewState extends State<Video360View>
     with WidgetsBindingObserver {
   late Video360Controller controller;
 
-  bool isPlaying = false;
-
   @override
   void initState() {
     WidgetsBinding.instance?.addObserver(this);
@@ -63,10 +60,9 @@ class _Video360ViewState extends State<Video360View>
           viewType: 'kino_video_360',
           onPlatformViewCreated: _onPlatformViewCreated,
           gestureRecognizers: [
-            if (isPlaying)
-              Factory(
-                () => EagerGestureRecognizer(),
-              ),
+            Factory(
+              () => EagerGestureRecognizer(),
+            ),
           ].toSet(),
         ),
       );
@@ -117,14 +113,7 @@ class _Video360ViewState extends State<Video360View>
       isAutoPlay: widget.isAutoPlay,
       isRepeat: widget.isRepeat,
       onCallback: widget.onCallback,
-      onPlayInfo: (info) {
-        if (info.isPlaying != isPlaying && Platform.isAndroid) {
-          setState(() {
-            isPlaying = info.isPlaying;
-          });
-        }
-        widget.onPlayInfo?.call(info);
-      },
+      onPlayInfo: widget.onPlayInfo,
     );
     controller.updateTime();
     widget.onVideo360ViewCreated(controller);
