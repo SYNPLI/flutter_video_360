@@ -135,7 +135,10 @@ extension Video360View {
         self.swifty360View = Swifty360View(withFrame: CGRect(x: 0.0, y: 0.0, width: width, height: height),
                                            player: self.player,
                                            motionManager: motionManager)
-        self.swifty360View.setup(player: self.player, motionManager: motionManager)
+        self.swifty360View.setup(player: self.player, motionManager: motionManager) { compassAngle in
+            self.channel.invokeMethod("updateCompassAngle", arguments: ["compassAngle": compassAngle])
+        }
+        self.swifty360View.cameraController.allowDeviceMotionPanning = false
         self.addSubview(self.swifty360View)
     }
 

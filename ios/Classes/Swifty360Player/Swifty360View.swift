@@ -106,7 +106,7 @@ open class Swifty360View: UIView {
         super.init(coder: aDecoder)
     }
 
-    open func setup(player: AVPlayer, motionManager: Swifty360MotionManagement?) {
+    open func setup(player: AVPlayer, motionManager: Swifty360MotionManagement?, onCompassAngleUpdate: @escaping (Float) -> Void) {
         let initialSceneFrame = sceneBoundsForScreenBounds(screenBounds: bounds)
         underlyingSceneSize = initialSceneFrame.size
         sceneView = SCNView(frame: initialSceneFrame)
@@ -119,6 +119,7 @@ open class Swifty360View: UIView {
             guard let strongSelf = weakSelf else {
                 return
             }
+            onCompassAngleUpdate(strongSelf.compassAngle)
             strongSelf.delegate?.didUpdateCompassAngle(withViewController: strongSelf,
                                                        compassAngle: strongSelf.compassAngle)
         }

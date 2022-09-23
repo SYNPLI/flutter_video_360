@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_360/src/video360_play_info.dart';
 
@@ -19,6 +20,7 @@ class Video360Controller {
     this.isRepeat,
     this.onCallback,
     this.onPlayInfo,
+    this.onCompassAngleChanged,
   }) {
     _channel = MethodChannel('kino_video_360_$id');
     _channel.setMethodCallHandler(_handleMethodCalls);
@@ -35,6 +37,7 @@ class Video360Controller {
   final bool? isRepeat;
   final Video360ControllerCallback? onCallback;
   final Video360ControllerPlayInfo? onPlayInfo;
+  final ValueChanged<double>? onCompassAngleChanged;
 
   StreamSubscription? playInfoStream;
 
@@ -202,6 +205,11 @@ class Video360Controller {
           compassAngle: compassAngle,
         ));
 
+        break;
+      case 'updateCompassAngle':
+        final compassAngle = call.arguments['compassAngle'] as double;
+
+        onCompassAngleChanged?.call(compassAngle);
         break;
       default:
         print('Unknowm method ${call.method} ');

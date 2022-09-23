@@ -23,6 +23,7 @@ class Video360View extends StatefulWidget {
   final VoidCallback? onPanCancel;
   final VoidCallback? onPanStart;
   final VoidCallback? onPanEnd;
+  final ValueChanged<double>? onCompassAngleUpdate;
 
   const Video360View({
     Key? key,
@@ -36,6 +37,7 @@ class Video360View extends StatefulWidget {
     this.onPanCancel,
     this.onPanStart,
     this.onPanEnd,
+    this.onCompassAngleUpdate,
   }) : super(key: key);
 
   @override
@@ -114,6 +116,7 @@ class _Video360ViewState extends State<Video360View>
       isRepeat: widget.isRepeat,
       onCallback: widget.onCallback,
       onPlayInfo: widget.onPlayInfo,
+      onCompassAngleChanged: widget.onCompassAngleUpdate,
     );
     controller.updateTime();
     widget.onVideo360ViewCreated(controller);
