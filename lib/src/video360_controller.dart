@@ -81,25 +81,31 @@ class Video360Controller {
     }
   }
 
-  reset() async {
+  reset({bool autoplay = false}) async {
     try {
-      await _channel.invokeMethod<void>('reset');
+      await _channel.invokeMethod<void>('reset', {'autoplay': autoplay});
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
     }
   }
 
-  jumpTo(double millisecond) async {
+  jumpTo(double millisecond, {bool autoplay = false}) async {
     try {
-      await _channel.invokeMethod<void>('jumpTo', {'millisecond': millisecond});
+      await _channel.invokeMethod<void>('jumpTo', {
+        'millisecond': millisecond,
+        'autoplay': autoplay,
+      });
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
     }
   }
 
-  seekTo(double millisecond) async {
+  seekTo(double millisecond, {bool autoplay = false}) async {
     try {
-      await _channel.invokeMethod<void>('seekTo', {'millisecond': millisecond});
+      await _channel.invokeMethod<void>('seekTo', {
+        'millisecond': millisecond,
+        'autoplay': autoplay,
+      });
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
     }
