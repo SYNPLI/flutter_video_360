@@ -83,6 +83,8 @@ class _Video360ViewState extends State<Video360View>
                 true, details.localPosition.dx, details.localPosition.dy);
           },
           onPanUpdate: (details) {
+            widget.onPanStart?.call();
+
             controller.onPanUpdate(
                 false, details.localPosition.dx, details.localPosition.dy);
           },
