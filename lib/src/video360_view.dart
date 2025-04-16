@@ -1,14 +1,12 @@
-import 'dart:ui';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:video_360/src/video360_android_view.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:video_360/src/video360_controller.dart';
 import 'package:video_360/src/video360_ios_view.dart';
 
-typedef Video360ViewCreatedCallback = void Function(
-    Video360Controller controller);
+typedef Video360ViewCreatedCallback = void Function(Video360Controller controller);
 typedef PlatformViewCreatedCallback = void Function(int id);
 
 class Video360View extends StatefulWidget {
@@ -44,29 +42,56 @@ class Video360View extends StatefulWidget {
   _Video360ViewState createState() => _Video360ViewState();
 }
 
-class _Video360ViewState extends State<Video360View>
-    with WidgetsBindingObserver {
+class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver {
   late Video360Controller controller;
 
   @override
   void initState() {
-    WidgetsBinding.instance?.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return Container(
-        child: Video360AndroidView(
-          viewType: 'kino_video_360',
-          onPlatformViewCreated: _onPlatformViewCreated,
-          gestureRecognizers: [
-            Factory(
-              () => EagerGestureRecognizer(),
-            ),
-          ].toSet(),
-        ),
+      // return Video360AndroidView(
+      //   viewType: 'kino_video_360',
+      //   onPlatformViewCreated: _onPlatformViewCreated,
+      // );
+      return PlatformViewLink(
+        viewType: 'kino_video_360',
+        surfaceFactory: (
+          BuildContext context,
+          PlatformViewController controller,
+        ) {
+          return AndroidViewSurface(
+            controller: controller as AndroidViewController,
+            gestureRecognizers: [
+              Factory(
+                () => EagerGestureRecognizer(),
+              ),
+            ].toSet(),
+            hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+          );
+        },
+        onCreatePlatformView: (PlatformViewCreationParams params) {
+          final ExpensiveAndroidViewController controller =
+              PlatformViewsService.initExpensiveAndroidView(
+            id: params.id,
+            viewType: 'kino_video_360',
+            layoutDirection: TextDirection.ltr,
+            // creationParams: creationParams,
+            creationParams: <String, dynamic>{},
+            creationParamsCodec: const StandardMessageCodec(),
+            onFocus: () => params.onFocusChanged(true),
+          );
+          controller
+            ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+            ..addOnPlatformViewCreatedListener(_onPlatformViewCreated)
+            ..create();
+
+          return controller;
+        },
       );
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       return Container(
@@ -79,22 +104,19 @@ class _Video360ViewState extends State<Video360View>
           onPanStart: (details) {
             widget.onPanStart?.call();
 
-            controller.onPanUpdate(
-                true, details.localPosition.dx, details.localPosition.dy);
+            controller.onPanUpdate(true, details.localPosition.dx, details.localPosition.dy);
           },
           onPanUpdate: (details) {
             widget.onPanStart?.call();
 
-            controller.onPanUpdate(
-                false, details.localPosition.dx, details.localPosition.dy);
+            controller.onPanUpdate(false, details.localPosition.dx, details.localPosition.dy);
           },
           onPanEnd: (_) => widget.onPanEnd?.call(),
         ),
       );
     }
     return Center(
-      child: Text(
-          '$defaultTargetPlatform is not supported by the video360_view plugin'),
+      child: Text('$defaultTargetPlatform is not supported by the video360_view plugin'),
     );
   }
 
@@ -126,7 +148,7 @@ class _Video360ViewState extends State<Video360View>
 
   @override
   void dispose() {
-    WidgetsBinding.instance?.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     controller.dispose();
     super.dispose();
   }
