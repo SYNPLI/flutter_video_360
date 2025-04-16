@@ -1,22 +1,26 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_360/src/video360_play_info.dart';
 
-typedef Video360ControllerCallback = void Function(String method, dynamic arguments);
+typedef Video360ControllerCallback = void Function(
+    String method, dynamic arguments);
 typedef Video360ControllerPlayInfo = void Function(Video360PlayInfo playInfo);
 
 class Video360Controller {
   Video360Controller({
     required int id,
     this.url,
+    this.headers,
     this.width,
     this.height,
     this.isAutoPlay,
     this.isRepeat,
     this.onCallback,
     this.onPlayInfo,
+    this.onCompassAngleChanged,
   }) {
     _channel = MethodChannel('kino_video_360_$id');
     _channel.setMethodCallHandler(_handleMethodCalls);
@@ -26,12 +30,14 @@ class Video360Controller {
   late MethodChannel _channel;
 
   final String? url;
+  final Map<String, String>? headers;
   final double? width;
   final double? height;
   final bool? isAutoPlay;
   final bool? isRepeat;
   final Video360ControllerCallback? onCallback;
   final Video360ControllerPlayInfo? onPlayInfo;
+  final ValueChanged<double>? onCompassAngleChanged;
 
   StreamSubscription? playInfoStream;
 
@@ -40,6 +46,7 @@ class Video360Controller {
       await _channel.invokeMethod<void>('init', {
         'url': url,
         'width': width,
+        'headers': headers,
         'isAutoPlay': isAutoPlay,
         'isRepeat': isRepeat,
         'height': height,
@@ -51,6 +58,7 @@ class Video360Controller {
 
   dispose() async {
     try {
+      playInfoStream?.cancel();
       await _channel.invokeMethod<void>('dispose');
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
@@ -73,28 +81,30 @@ class Video360Controller {
     }
   }
 
-  reset() async {
+  reset({bool autoplay = false}) async {
     try {
-      await _channel.invokeMethod<void>('reset');
+      await _channel.invokeMethod<void>('reset', {'autoplay': autoplay});
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
     }
   }
 
-  jumpTo(double millisecond) async {
+  jumpTo(double millisecond, {bool autoplay = false}) async {
     try {
       await _channel.invokeMethod<void>('jumpTo', {
-        'millisecond': millisecond
+        'millisecond': millisecond,
+        'autoplay': autoplay,
       });
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
     }
   }
 
-  seekTo(double millisecond) async {
+  seekTo(double millisecond, {bool autoplay = false}) async {
     try {
       await _channel.invokeMethod<void>('seekTo', {
-        'millisecond': millisecond
+        'millisecond': millisecond,
+        'autoplay': autoplay,
       });
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');
@@ -104,11 +114,8 @@ class Video360Controller {
   onPanUpdate(bool isStart, double x, double y) async {
     if (Platform.isIOS) {
       try {
-        await _channel.invokeMethod<void>('onPanUpdate', {
-          'isStart': isStart,
-          'x': x,
-          'y': y
-        });
+        await _channel.invokeMethod<void>(
+            'onPanUpdate', {'isStart': isStart, 'x': x, 'y': y});
       } on PlatformException catch (e) {
         print('${e.code}: ${e.message}');
       }
@@ -153,12 +160,37 @@ class Video360Controller {
         playInfoStream = null;
       }
 
-      playInfoStream = Stream.periodic(Duration(milliseconds: 100), (x) => x).listen((event) async {
+      playInfoStream = Stream.periodic(Duration(milliseconds: 100), (x) => x)
+          .listen((event) async {
         var duration = await getCurrentPosition();
         var total = await getDuration();
         var isPlaying = await getPlaying();
-        onPlayInfo?.call(Video360PlayInfo(duration: duration, total: total, isPlaying: isPlaying));
+        onPlayInfo?.call(Video360PlayInfo(
+            duration: duration, total: total, isPlaying: isPlaying));
       });
+    }
+  }
+
+  /// Only available on iOS.
+  Future<void> resize(double width, double height) async {
+    if (Platform.isIOS) {
+      try {
+        await _channel
+            .invokeMethod<void>('resize', {'width': width, 'height': height});
+      } on PlatformException catch (e) {
+        print('${e.code}: ${e.message}');
+      }
+    }
+  }
+
+  /// Only available on iOS.
+  Future<void> centerCamera() async {
+    if (Platform.isIOS) {
+      try {
+        await _channel.invokeMethod<void>('centerCamera');
+      } on PlatformException catch (e) {
+        print('${e.code}: ${e.message}');
+      }
     }
   }
 
@@ -170,7 +202,20 @@ class Video360Controller {
         var duration = call.arguments['duration'];
         var total = call.arguments['total'];
         var isPlaing = call.arguments['isPlaying'];
-        onPlayInfo?.call(Video360PlayInfo(duration: duration, total: total, isPlaying: isPlaing));
+        final compassAngle = call.arguments['compassAngle'];
+
+        onPlayInfo?.call(Video360PlayInfo(
+          duration: duration,
+          total: total,
+          isPlaying: isPlaing,
+          compassAngle: compassAngle,
+        ));
+
+        break;
+      case 'updateCompassAngle':
+        final compassAngle = call.arguments['compassAngle'] as double;
+
+        onCompassAngleChanged?.call(compassAngle);
         break;
       default:
         print('Unknowm method ${call.method} ');

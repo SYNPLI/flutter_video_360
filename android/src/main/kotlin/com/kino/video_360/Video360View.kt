@@ -47,10 +47,12 @@ class Video360View(context: Context, messenger: BinaryMessenger, id: Int, textur
                 val url: String? = call.argument("url")
                 val isAutoPlay: Boolean? = call.argument("isAutoPlay")
                 val isRepeat: Boolean? = call.argument("isRepeat")
+                val headers: Map<String, String>? = call.argument("headers")
+
                 url?.let { vUrl ->
                     isAutoPlay?.let { autoPlay ->
                         isRepeat?.let { repeat ->
-                            videoView.initializePlayer(vUrl, autoPlay, repeat)
+                            videoView.initializePlayer(vUrl, autoPlay, repeat, headers)
 //                            videoView.context.startActivity(Intent(videoView.context, VRActivity::class.java))
                         }
                     }

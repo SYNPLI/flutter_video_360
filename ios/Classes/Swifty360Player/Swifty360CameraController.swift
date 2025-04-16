@@ -66,6 +66,7 @@ open class Swifty360CameraController: NSObject, UIGestureRecognizerDelegate {
      */
     open var compassAngleUpdateBlock: Swifty360CompassAngleUpdateBlock?
     open var panRecognizer: Swifty360CameraPanGestureRecognizer!
+    open var allowDeviceMotionPanning = true
     // Stored property
     private var deviceMotionPanningAxes: Swifty360PanningAxis!
     // Computed Property
@@ -137,8 +138,8 @@ open class Swifty360CameraController: NSObject, UIGestureRecognizerDelegate {
         pointOfView = view.pointOfView
         self.view = view
         currentPosition = CGPoint(x: 3.14, y: 0.0)
-        allowedDeviceMotionPanningAxes = Swifty360PanningAxis(rawValue: Swifty360PanningAxis.horizontal.rawValue | Swifty360PanningAxis.vertical.rawValue)
-        allowedPanGesturePanningAxes = Swifty360PanningAxis(rawValue: Swifty360PanningAxis.horizontal.rawValue | Swifty360PanningAxis.vertical.rawValue)
+        allowedDeviceMotionPanningAxes = Swifty360PanningAxis(rawValue: Swifty360PanningAxis.horizontal.rawValue)
+        allowedPanGesturePanningAxes = Swifty360PanningAxis(rawValue: Swifty360PanningAxis.horizontal.rawValue)
 
         panRecognizer = Swifty360CameraPanGestureRecognizer(target: self, action: #selector(Swifty360CameraController.handlePan(recognizer:)))
         panRecognizer.delegate = self
@@ -149,17 +150,17 @@ open class Swifty360CameraController: NSObject, UIGestureRecognizerDelegate {
     }
 
     open func startMotionUpdates() {
-        guard let motionManager = self.motionManager else {
-            return
-        }
+        guard let motionManager = self.motionManager,
+              self.allowDeviceMotionPanning else {return}
         let preferredMotionUpdateInterval = TimeInterval(1.0 / 60.0)
         motionUpdateToken = motionManager.startUpdating(preferredUpdateInterval: preferredMotionUpdateInterval)
     }
 
     open func stopMotionUpdates() {
-        guard let motionManager = self.motionManager, let motionUpdateToken = self.motionUpdateToken else {
-            return
-        }
+        guard let motionManager = self.motionManager,
+              let motionUpdateToken = self.motionUpdateToken,
+              self.allowDeviceMotionPanning else { return }
+        
         motionManager.stopUpdating(token: motionUpdateToken)
         self.motionUpdateToken = nil
     }
@@ -227,9 +228,8 @@ open class Swifty360CameraController: NSObject, UIGestureRecognizerDelegate {
      many times a second during SceneKit rendering updates.
      */
     func updateCameraAngleForCurrentDeviceMotion() {
-        guard let motionManager = self.motionManager else {
-            return
-        }
+        guard let motionManager = self.motionManager,
+              self.allowDeviceMotionPanning else {return}
 
         if isAnimatingReorientation {
             return

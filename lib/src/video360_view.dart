@@ -13,19 +13,29 @@ class Video360View extends StatefulWidget {
   final Video360ViewCreatedCallback onVideo360ViewCreated;
 
   final String? url;
+  final Map<String, String>? headers;
   final bool? isAutoPlay;
   final bool? isRepeat;
   final Video360ControllerCallback? onCallback;
   final Video360ControllerPlayInfo? onPlayInfo;
+  final VoidCallback? onPanCancel;
+  final VoidCallback? onPanStart;
+  final VoidCallback? onPanEnd;
+  final ValueChanged<double>? onCompassAngleUpdate;
 
   const Video360View({
     Key? key,
     required this.onVideo360ViewCreated,
     this.url,
+    this.headers,
     this.isAutoPlay = true,
     this.isRepeat = true,
     this.onCallback,
     this.onPlayInfo,
+    this.onPanCancel,
+    this.onPanStart,
+    this.onPanEnd,
+    this.onCompassAngleUpdate,
   }) : super(key: key);
 
   @override
@@ -33,7 +43,6 @@ class Video360View extends StatefulWidget {
 }
 
 class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver {
-
   late Video360Controller controller;
 
   @override
@@ -52,24 +61,27 @@ class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver
       return PlatformViewLink(
         viewType: 'kino_video_360',
         surfaceFactory: (
-            BuildContext context,
-            PlatformViewController controller,
-            ) {
+          BuildContext context,
+          PlatformViewController controller,
+        ) {
           return AndroidViewSurface(
             controller: controller as AndroidViewController,
-            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+            gestureRecognizers: [
+              Factory(
+                () => EagerGestureRecognizer(),
+              ),
+            ].toSet(),
             hitTestBehavior: PlatformViewHitTestBehavior.opaque,
           );
         },
         onCreatePlatformView: (PlatformViewCreationParams params) {
           final ExpensiveAndroidViewController controller =
-          PlatformViewsService.initExpensiveAndroidView(
+              PlatformViewsService.initExpensiveAndroidView(
             id: params.id,
             viewType: 'kino_video_360',
             layoutDirection: TextDirection.ltr,
             // creationParams: creationParams,
-            creationParams: <String, dynamic>{
-            },
+            creationParams: <String, dynamic>{},
             creationParamsCodec: const StandardMessageCodec(),
             onFocus: () => params.onFocusChanged(true),
           );
@@ -88,18 +100,23 @@ class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver
             viewType: 'kino_video_360',
             onPlatformViewCreated: _onPlatformViewCreated,
           ),
+          onPanCancel: widget.onPanCancel,
           onPanStart: (details) {
+            widget.onPanStart?.call();
+
             controller.onPanUpdate(true, details.localPosition.dx, details.localPosition.dy);
           },
           onPanUpdate: (details) {
+            widget.onPanStart?.call();
+
             controller.onPanUpdate(false, details.localPosition.dx, details.localPosition.dy);
           },
+          onPanEnd: (_) => widget.onPanEnd?.call(),
         ),
       );
     }
     return Center(
-      child: Text(
-        '$defaultTargetPlatform is not supported by the video360_view plugin'),
+      child: Text('$defaultTargetPlatform is not supported by the video360_view plugin'),
     );
   }
 
@@ -108,7 +125,6 @@ class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver
       return;
     }
 
-    // var pixelRatio = window.devicePixelRatio;
     RenderBox? box = context.findRenderObject() as RenderBox?;
 
     var width = box?.size.width ?? 0.0;
@@ -117,12 +133,14 @@ class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver
     controller = Video360Controller(
       id: id,
       url: widget.url,
+      headers: widget.headers,
       width: width,
       height: heigt,
       isAutoPlay: widget.isAutoPlay,
       isRepeat: widget.isRepeat,
       onCallback: widget.onCallback,
       onPlayInfo: widget.onPlayInfo,
+      onCompassAngleChanged: widget.onCompassAngleUpdate,
     );
     controller.updateTime();
     widget.onVideo360ViewCreated(controller);
@@ -131,6 +149,7 @@ class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    controller.dispose();
     super.dispose();
   }
 }

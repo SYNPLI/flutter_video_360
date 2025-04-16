@@ -40,6 +40,7 @@ extension Video360View {
                 guard let argMaps = call.arguments as? Dictionary<String, Any>,
                       let url = argMaps["url"] as? String,
                       let videoURL = URL(string: url),
+                      let headers = argMaps["headers"] as? Dictionary<String, String>,
                       let isAutoPlay = argMaps["isAutoPlay"] as? Bool,
                       let isRepeat = argMaps["isRepeat"] as? Bool,
                       let width = argMaps["width"] as? Double,
@@ -48,7 +49,7 @@ extension Video360View {
                     return
                 }
 
-                self.initView(videoURL: videoURL, width: width, height: height)
+                self.initView(videoURL: videoURL, headers: headers, width: width, height: height)
                 self.updateTime()
 
                 if isAutoPlay {
@@ -72,23 +73,31 @@ extension Video360View {
                 self.stop()
 
             case "reset":
-                self.reset()
+                guard let argMaps = call.arguments as? Dictionary<String, Any>,
+                      let autoplay = argMaps["autoplay"] as? Bool else {
+                    result(FlutterError(code: call.method, message: "Missing argument", details: nil))
+                    return
+                }
+                
+                self.reset(autoplay: autoplay)
 
             case "jumpTo":
                 guard let argMaps = call.arguments as? Dictionary<String, Any>,
-                      let time = argMaps["millisecond"] as? Double else {
+                      let time = argMaps["millisecond"] as? Double,
+                      let autoplay = argMaps["autoplay"] as? Bool else {
                     result(FlutterError(code: call.method, message: "Missing argument", details: nil))
                     return
                 }
-                self.jumpTo(second: time / 1000.0)
+                self.jumpTo(second: time / 1000.0, autoplay: autoplay)
 
             case "seekTo":
                 guard let argMaps = call.arguments as? Dictionary<String, Any>,
-                      let time = argMaps["millisecond"] as? Double else {
+                      let time = argMaps["millisecond"] as? Double,
+                      let autoplay = argMaps["autoplay"] as? Bool else {
                     result(FlutterError(code: call.method, message: "Missing argument", details: nil))
                     return
                 }
-                self.seekTo(second: time / 1000.0)
+                self.seekTo(second: time / 1000.0, autoplay: autoplay)
 
             case "onPanUpdate":
                 guard let argMaps = call.arguments as? Dictionary<String, Any>,
@@ -102,6 +111,22 @@ extension Video360View {
                 }
                 let point = CGPoint(x: x, y: y)
                 self.swifty360View.cameraController.handlePan(isStart: isStart, point: point)
+                
+            case "resize":
+                guard let argMaps = call.arguments as? Dictionary<String, Any>,
+                      let width = argMaps["width"] as? Double,
+                      let height = argMaps["height"] as? Double else {
+                    result(FlutterError(code: call.method, message: "Missing argument", details: nil))
+                    return
+                }
+                let size = CGSize(width: width, height: height)
+                self.swifty360View.frame.size = size
+                
+            case "centerCamera":
+                self.swifty360View.cameraController.currentPosition = CGPoint(x: 3.14, y: 0.0)
+                var eulerAngles = self.swifty360View.cameraController.pointOfView.eulerAngles
+                eulerAngles.y = 3.14
+                self.swifty360View.cameraController.pointOfView.eulerAngles = eulerAngles
 
             default:
                 result(FlutterMethodNotImplemented)
@@ -110,19 +135,24 @@ extension Video360View {
     }
 
     // 360View Init
-    private func initView(videoURL: URL, width: Double, height: Double) {
-        self.player = AVPlayer(url: videoURL)
+    private func initView(videoURL: URL, headers: [String: String], width: Double, height: Double) {
+        let asset = AVURLAsset(url: videoURL, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+        let playerItem = AVPlayerItem(asset: asset)
+        self.player = AVPlayer(playerItem: playerItem)
         let motionManager = Swifty360MotionManager.shared
         self.swifty360View = Swifty360View(withFrame: CGRect(x: 0.0, y: 0.0, width: width, height: height),
                                            player: self.player,
                                            motionManager: motionManager)
-        self.swifty360View.setup(player: self.player, motionManager: motionManager)
+        self.swifty360View.setup(player: self.player, motionManager: motionManager) { compassAngle in
+            self.channel.invokeMethod("updateCompassAngle", arguments: ["compassAngle": compassAngle])
+        }
+        self.swifty360View.cameraController.allowDeviceMotionPanning = false
         self.addSubview(self.swifty360View)
     }
 
     // repeat
     @objc private func playerFinish(noti: NSNotification) {
-        self.reset()
+        self.reset(autoplay: true)
     }
 
     //dispose
@@ -142,28 +172,33 @@ extension Video360View {
     }
 
     // reset
-    private func reset() {
-        self.jumpTo(second: .zero)
+    private func reset(autoplay: Bool) {
+        self.jumpTo(second: .zero, autoplay: autoplay)
     }
 
     // jumpTo
-    private func jumpTo(second: Double) {
+    private func jumpTo(second: Double, autoplay: Bool) {
         let sec = CMTimeMakeWithSeconds(Float64(second), preferredTimescale: Int32(NSEC_PER_SEC))
         self.player.seek(to: sec)
-        self.checkPlayerState()
+        if (autoplay) {
+            self.checkPlayerState()
+        }
     }
 
     // seekTo
-    private func seekTo(second: Double) {
+    private func seekTo(second: Double, autoplay: Bool) {
         let current = self.swifty360View.player.currentTime()
         let sec = CMTimeMakeWithSeconds(Float64(second), preferredTimescale: Int32(NSEC_PER_SEC))
         self.player.seek(to: current + sec)
-        self.checkPlayerState()
+        
+        if (autoplay) {
+            self.checkPlayerState()
+        }
     }
 
     // updateTime
     private func updateTime() {
-        let interval = CMTime(seconds: 0.01, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        let interval = CMTime(seconds: 0.1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         self.player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
 
@@ -171,13 +206,16 @@ extension Video360View {
             let totalDuration = self.player.currentItem?.duration ?? .zero
             let total = Int(totalDuration.value)
             let isPlaying = self.player?.isPlaying
+            let compassAngle = self.swifty360View.compassAngle
 
-            self.channel.invokeMethod("updateTime", arguments: ["duration": duration, "total": total, "isPlaying": isPlaying])
+            self.channel.invokeMethod("updateTime", arguments: ["duration": duration, "total": total, "isPlaying": isPlaying, "compassAngle": compassAngle])
         }
     }
 
     // check player state - for auto play
     private func checkPlayerState() {
+        guard self.timer == nil else { return }
+
         self.timer = Timer(timeInterval: 0.5,
                            target: self,
                            selector: #selector(self.checkReadyToPlay),
