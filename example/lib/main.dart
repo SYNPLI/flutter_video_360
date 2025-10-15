@@ -30,9 +30,7 @@ class _MyAppState extends State<MyApp> {
     var height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Video 360 Plugin example app'),
-      ),
+      appBar: AppBar(title: const Text('Video 360 Plugin example app')),
       body: Stack(
         children: [
           Center(
@@ -112,9 +110,9 @@ class _MyAppState extends State<MyApp> {
                     ),
                   ),
                 ],
-              )
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -131,15 +129,15 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Player'),
-      ),
+      appBar: AppBar(title: Text('Player')),
       body: Center(
         child: ElevatedButton(
           child: Text('Go to 360º video'),
           onPressed: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (context) => MyApp()));
+              context,
+              MaterialPageRoute(builder: (context) => MyApp()),
+            );
           },
         ),
       ),
