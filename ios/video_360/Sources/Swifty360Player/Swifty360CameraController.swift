@@ -112,7 +112,7 @@ open class Swifty360CameraController: NSObject, UIGestureRecognizerDelegate {
     internal var rotateStart: CGPoint!
     internal var rotateCurrent: CGPoint!
     internal var rotateDelta: CGPoint!
-    internal var currentPosition: CGPoint!
+    public var currentPosition: CGPoint!
     internal var isAnimatingReorientation = false
     internal var hasReportedInitialCameraMovement = false
     internal static let minimalRotationDistanceToReport = CGFloat(0.75)
