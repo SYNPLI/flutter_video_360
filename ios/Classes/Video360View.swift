@@ -11,6 +11,7 @@ class Video360View: UIView, FlutterPlugin {
     private var timer: Timer?
     private var player: AVPlayer!
     private var swifty360View: Swifty360View!
+    private var fieldOfViewScale: CGFloat = 1
 
     init(viewId: String, messenger: FlutterBinaryMessenger) {
         self.channel = FlutterMethodChannel(name: viewId, binaryMessenger: messenger)
@@ -44,11 +45,13 @@ extension Video360View {
                       let isAutoPlay = argMaps["isAutoPlay"] as? Bool,
                       let isRepeat = argMaps["isRepeat"] as? Bool,
                       let width = argMaps["width"] as? Double,
-                      let height = argMaps["height"] as? Double else {
+                      let height = argMaps["height"] as? Double,
+                      let fieldOfViewScale = argMaps["fieldOfViewScale"] as? Double else {
                     result(FlutterError(code: call.method, message: "Missing argument", details: nil))
                     return
                 }
 
+                self.fieldOfViewScale = CGFloat(fieldOfViewScale)
                 self.initView(videoURL: videoURL, headers: headers, width: width, height: height)
                 self.updateTime()
 
@@ -121,6 +124,10 @@ extension Video360View {
                 }
                 let size = CGSize(width: width, height: height)
                 self.swifty360View.frame.size = size
+                self.swifty360View.cameraController.updateCameraFOV(
+                    withViewSize: size,
+                    scale: self.fieldOfViewScale
+                )
                 
             case "centerCamera":
                 self.swifty360View.cameraController.currentPosition = CGPoint(x: 3.14, y: 0.0)
@@ -147,6 +154,14 @@ extension Video360View {
             self.channel.invokeMethod("updateCompassAngle", arguments: ["compassAngle": compassAngle])
         }
         self.swifty360View.cameraController.allowDeviceMotionPanning = false
+        self.swifty360View.cameraController.allowedPanGesturePanningAxes = [
+            .horizontal,
+            .vertical,
+        ]
+        self.swifty360View.cameraController.updateCameraFOV(
+            withViewSize: CGSize(width: width, height: height),
+            scale: self.fieldOfViewScale
+        )
         self.addSubview(self.swifty360View)
     }
 

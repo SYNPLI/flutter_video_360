@@ -16,6 +16,7 @@ class Video360Controller {
     this.headers,
     this.width,
     this.height,
+    this.fieldOfViewScale = 1,
     this.isAutoPlay,
     this.isRepeat,
     this.onCallback,
@@ -33,6 +34,10 @@ class Video360Controller {
   final Map<String, String>? headers;
   final double? width;
   final double? height;
+
+  /// iOS-only multiplier for the calculated field of view. Values above 1
+  /// zoom out; Android keeps its existing spherical projection.
+  final double fieldOfViewScale;
   final bool? isAutoPlay;
   final bool? isRepeat;
   final Video360ControllerCallback? onCallback;
@@ -50,6 +55,7 @@ class Video360Controller {
         'isAutoPlay': isAutoPlay,
         'isRepeat': isRepeat,
         'height': height,
+        'fieldOfViewScale': fieldOfViewScale,
       });
     } on PlatformException catch (e) {
       print('${e.code}: ${e.message}');

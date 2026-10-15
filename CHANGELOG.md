@@ -1,3 +1,7 @@
+## Unreleased
+
+* Feat : Add an iOS-only `fieldOfViewScale` option and allow vertical touch panning
+
 ## 0.0.7
 
 * Feat : Upgrade Flutter support veriosn 3.0.0 

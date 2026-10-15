@@ -14,6 +14,9 @@ class Video360View extends StatefulWidget {
 
   final String? url;
   final Map<String, String>? headers;
+
+  /// iOS-only field-of-view multiplier. `1` preserves the historical view.
+  final double fieldOfViewScale;
   final bool? isAutoPlay;
   final bool? isRepeat;
   final Video360ControllerCallback? onCallback;
@@ -28,6 +31,7 @@ class Video360View extends StatefulWidget {
     required this.onVideo360ViewCreated,
     this.url,
     this.headers,
+    this.fieldOfViewScale = 1,
     this.isAutoPlay = true,
     this.isRepeat = true,
     this.onCallback,
@@ -136,6 +140,7 @@ class _Video360ViewState extends State<Video360View> with WidgetsBindingObserver
       headers: widget.headers,
       width: width,
       height: heigt,
+      fieldOfViewScale: widget.fieldOfViewScale,
       isAutoPlay: widget.isAutoPlay,
       isRepeat: widget.isRepeat,
       onCallback: widget.onCallback,

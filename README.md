@@ -50,6 +50,7 @@ Add Video360View:
 Video360View(
     onVideo360ViewCreated: _onVideo360ViewCreated,
     url: YOUR_360_VIDEO_URL,
+    fieldOfViewScale: 1.12, // iOS only; 1 keeps the historical view
     isAutoPlay: true,   // defalut : true
     isRepeat: true, // defalut : true
     onPlayInfo: (Video360PlayInfo info) {
