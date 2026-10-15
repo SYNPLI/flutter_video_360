@@ -48,6 +48,11 @@ class Video360View(context: Context, messenger: BinaryMessenger, id: Int, textur
                 val isAutoPlay: Boolean? = call.argument("isAutoPlay")
                 val isRepeat: Boolean? = call.argument("isRepeat")
                 val headers: Map<String, String>? = call.argument("headers")
+                val fieldOfViewScale = call.argument<Double>("fieldOfViewScale")
+
+                if (fieldOfViewScale != null) {
+                    videoView.setFieldOfViewScale(fieldOfViewScale.toFloat())
+                }
 
                 url?.let { vUrl ->
                     isAutoPlay?.let { autoPlay ->

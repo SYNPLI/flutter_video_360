@@ -1,6 +1,7 @@
 ## Unreleased
 
 * Feat : Add an iOS-only `fieldOfViewScale` option and allow vertical touch panning
+* Feat : Zoom the Android 360 view out by the same field-of-view scale so its black edges stay visible
 
 ## 0.0.7
 

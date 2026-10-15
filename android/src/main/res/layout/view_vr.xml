@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/vr_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <com.google.android.exoplayer2.ui.StyledPlayerView
-        android:id="@+id/vr_player"
+    <com.google.android.exoplayer2.video.spherical.WideSphericalGLSurfaceView
+        android:id="@+id/vr_gl"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:surface_type="spherical_gl_surface_view"/>
+        android:layout_height="match_parent"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

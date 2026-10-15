@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.util.AttributeSet
+import android.view.Surface
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.google.android.exoplayer2.C
@@ -17,20 +18,19 @@ import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
-import com.google.android.exoplayer2.ui.StyledPlayerView
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.Util
-import com.google.android.exoplayer2.video.spherical.SphericalGLSurfaceView
+import com.google.android.exoplayer2.video.spherical.WideSphericalGLSurfaceView
 import io.flutter.view.TextureRegistry
 
 class Video360UIView : FrameLayout, Player.Listener {
 
     private val TAG = Video360UIView::class.java.simpleName
 
-    private lateinit var vrPlayer: StyledPlayerView
+    private lateinit var sphericalView: WideSphericalGLSurfaceView
     private var player: ExoPlayer? = null
     private var videoUrl = ""
     private var _headers = mapOf<String, String>()
@@ -62,14 +62,21 @@ class Video360UIView : FrameLayout, Player.Listener {
 
         inflate(context, R.layout.view_vr, this)
 
-        vrPlayer = findViewById(R.id.vr_player)
+        sphericalView = findViewById(R.id.vr_gl)
+        sphericalView.setDefaultStereoMode(C.STEREO_MODE_STEREO_MESH)
+        sphericalView.setUseSensorRotation(false)
+        sphericalView.setFieldOfViewScale(1.12f)
+        sphericalView.addVideoSurfaceListener(
+                object : WideSphericalGLSurfaceView.VideoSurfaceListener {
+                    override fun onVideoSurfaceCreated(surface: Surface) {
+                        bindVideoSurface(surface)
+                    }
 
-        (vrPlayer.videoSurfaceView as SphericalGLSurfaceView)
-                .setDefaultStereoMode(C.STEREO_MODE_STEREO_MESH)
-        (vrPlayer.videoSurfaceView as SphericalGLSurfaceView)
-                .setUseSensorRotation(false)
-        vrPlayer.useController = false
-//        vrPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    override fun onVideoSurfaceDestroyed(surface: Surface) {
+                        player?.videoComponent?.clearVideoSurface(surface)
+                    }
+                },
+        )
 
         bandwidthMeter = DefaultBandwidthMeter.Builder(context)
                 .build()
@@ -141,13 +148,27 @@ class Video360UIView : FrameLayout, Player.Listener {
                 player?.repeatMode = Player.REPEAT_MODE_OFF
             }
 
-            vrPlayer.player = player
+            sphericalView.videoSurface?.let { bindVideoSurface(it) }
         }
-        vrPlayer.onResume()
+        sphericalView.onResume()
+    }
+
+    fun setFieldOfViewScale(scale: Float) {
+        sphericalView.setFieldOfViewScale(scale)
+    }
+
+    private fun bindVideoSurface(surface: Surface) {
+        val activePlayer = player ?: return
+        activePlayer.videoComponent?.setVideoSurface(surface)
+        activePlayer.setVideoFrameMetadataListener(
+            sphericalView.videoFrameMetadataListener,
+        )
+        activePlayer.setCameraMotionListener(sphericalView.cameraMotionListener)
     }
 
     fun releasePlayer() {
         if (player != null) {
+            player?.videoComponent?.clearVideoSurface()
             player?.release()
             player = null
         }
@@ -180,14 +201,14 @@ class Video360UIView : FrameLayout, Player.Listener {
 
     fun onStop() {
         if (Build.VERSION.SDK_INT > 23) {
-            vrPlayer.onPause()
+            sphericalView.onPause()
             releasePlayer()
         }
     }
 
     fun onPause() {
         if (Build.VERSION.SDK_INT <= 23) {
-            vrPlayer.onPause()
+            sphericalView.onPause()
             releasePlayer()
         }
     }
