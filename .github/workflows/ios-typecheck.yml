@@ -1,0 +1,22 @@
+name: iOS typecheck
+on:
+  pull_request:
+  push:
+    branches: [codex/ios-player-lifecycle]
+jobs:
+  typecheck:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          cache: true
+      - run: flutter precache --ios
+      - name: Typecheck native plugin
+        shell: bash
+        run: |
+          find ios/Classes -name '*.swift' -print0 | xargs -0 xcrun swiftc -typecheck \
+            -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+            -target arm64-apple-ios13.0-simulator \
+            -F "$FLUTTER_ROOT/bin/cache/artifacts/engine/ios/Flutter.xcframework/ios-arm64_x86_64-simulator"
