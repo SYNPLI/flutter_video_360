@@ -1,3 +1,5 @@
+import UIKit
+
 //
 //  Swifty360CameraPanGestureRecognizer.swift
 //  Swifty360Player
